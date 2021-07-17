@@ -21,6 +21,7 @@ def grid_generation(img_list, save_path):
     plt.show()
 
 
+# sample images from IWAE
 def sample(IWAE_parameters, mean, logVar):
     std = torch.exp_(0.5 * logVar)
     epsilon = torch.randn_like(std)

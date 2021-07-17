@@ -101,10 +101,10 @@ def train():
         list_of_training_loss[i] = training_loss
         list_of_validation_loss[i] = validation_loss
         '''grid_generation(img_list=out_list,
-                        save_path='/Users/byronsu/PycharmProjects/IWAE/images/reconstruction('+str(i)+').png')'''
+                        save_path='~/PycharmProjects/IWAE/images/reconstruction('+str(i)+').png')'''
 
     torch.save(net.state_dict(),
-               '/Users/byronsu/PycharmProjects/IWAE/nn_parameters/IWAE_model.pt')
+               '~/PycharmProjects/IWAE/nn_parameters/IWAE_model.pt')
 
     # plot loss vs num of epoch
     plt.plot(num_of_epoch, list_of_training_loss, '-r', label='avg train loss')
@@ -112,7 +112,7 @@ def train():
     plt.legend()
     plt.xlabel('index')
     plt.ylabel('loss')
-    plt.savefig('/Users/byronsu/PycharmProjects/IWAE/images/loss_vs_epoch.png')
+    plt.savefig('~/PycharmProjects/IWAE/images/loss_vs_epoch.png')
     plt.show()
 
 
@@ -142,22 +142,22 @@ def evaluate():
 
     # show the original images for training
     grid_generation(img_list=original_images_list,
-                    save_path='/Users/byronsu/PycharmProjects/IWAE/images/original_images.png')
+                    save_path='~/PycharmProjects/IWAE/images/original_images.png')
 
     # show the reconstructed images through VAE
     grid_generation(img_list=out_list,
-                    save_path='/Users/byronsu/PycharmProjects/IWAE/images/reconstruction.png')
+                    save_path='~/PycharmProjects/IWAE/images/reconstruction.png')
 
     # show the sampled images
     sampled_images_list = [sample(IWAE_parameters, mean, logVar).cpu().detach()]
     grid_generation(img_list=sampled_images_list,
-                    save_path='/Users/byronsu/PycharmProjects/IWAE/images/sampled_images.png')
+                    save_path='~/PycharmProjects/IWAE/images/sampled_images.png')
 
 
 if __name__ == '__main__':
-    path1 = '/Users/byronsu/PycharmProjects/IWAE/images/original_images.png'
-    path2 = '/Users/byronsu/PycharmProjects/IWAE/images/reconstruction.png'
-    save_path = '/Users/byronsu/PycharmProjects/IWAE/images/compare.png'
+    path1 = '~/PycharmProjects/IWAE/images/original_images.png'
+    path2 = '~/PycharmProjects/IWAE/images/reconstruction.png'
+    save_path = '~/PycharmProjects/IWAE/images/compare.png'
     start_time = time.time()
     train()
     evaluate()
