@@ -17,19 +17,14 @@ def grid_generation(img_list, save_path):
     grid = torchvision.utils.make_grid(output_examples, nrow=10, normalize=True)
     plt.imshow(grid.permute(1, 2, 0))
     plt.axis('off')
-    plt.savefig(save_path)
+    #plt.savefig(save_path)
     plt.show()
 
 
-# sample images from IWAE
-def sample(IWAE_parameters, mean, logVar):
-    std = torch.exp_(0.5 * logVar)
-    epsilon = torch.randn_like(std)
-    h = mean + std * epsilon
-    tensor = F.relu(IWAE_parameters['decFC'](h))
-    tensor = torch.reshape(tensor, IWAE_parameters['reduced_dim_tuple'])
-    tensor = F.relu(IWAE_parameters['decConv1'](tensor))
-    tensor = torch.sigmoid(IWAE_parameters['decConv2'](tensor))
+# sample images from autoencoder
+def sample(decoder, latent_dim, batch_size):
+    h = torch.randn(batch_size, latent_dim)
+    tensor = decoder(h)
 
     return tensor
 
