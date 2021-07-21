@@ -25,42 +25,39 @@ epoch = 10
 learning_rate = 1e-3
 
 parameters_dict = {
-    'latent_dim_VAE': 6,
-    'latent_dim_IWAE': 16,
+    'latent_dim_VAE': 8,
+    'latent_dim_IWAE': 8,
     'k_VAE': 1,
     'k_IWAE': 5
 }
 
 # Datasets
-train_dataset = datasets.MNIST('/Users/byronsu/PycharmProjects/autoencoder',
+train_dataset = datasets.MNIST('~/PycharmProjects/autoencoder',
                                train=True,
                                transform=transforms.ToTensor(),
-                               download=False)
+                               download=True)
 
 test_dataset = datasets.MNIST('~/PycharmProjects/autoencoder',
                               train=False,
                               transform=transforms.ToTensor(),
-                              download=False)
-
-
-# set the neural network and Adam optimizer
-net = autoencoder(channel=1,
-                  width=28,
-                  height=28,
-                  hyperparameters=parameters_dict,
-                  mode='IWAE').to(device)
-optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
+                              download=True)
 
 # initialize the list to store loss vs epoch
 num_of_epoch = np.arange(epoch) + 1
-list_of_training_loss = np.zeros_like(num_of_epoch, dtype='float32')
-list_of_validation_loss = np.zeros_like(num_of_epoch, dtype='float32')
+list_of_training_loss_VAE = np.zeros_like(num_of_epoch, dtype='float32')
+list_of_validation_loss_VAE = np.zeros_like(num_of_epoch, dtype='float32')
+list_of_training_loss_IWAE = np.zeros_like(num_of_epoch, dtype='float32')
+list_of_validation_loss_IWAE = np.zeros_like(num_of_epoch, dtype='float32')
 
-# initialize the list to store original/reconstructed images
-original_images_list = []
 
+def train(mode):
+    if mode == 'VAE':
+        net = net_VAE
+        optimizer = optimizer_VAE
+    if mode == 'IWAE':
+        net = net_IWAE
+        optimizer = optimizer_IWAE
 
-def train(mode='IWAE'):
     net.train()
 
     train_loader = torch.utils.data.DataLoader(
@@ -108,24 +105,27 @@ def train(mode='IWAE'):
         end_time = time.time()
         duration = end_time - start_time
         print('Epoch: {}, Loss: {}, Time: {}'.format(i, training_loss, duration))
-        list_of_training_loss[i] = training_loss
-        list_of_validation_loss[i] = validation_loss
+        if mode == 'VAE':
+            list_of_training_loss_VAE[i] = training_loss
+            list_of_validation_loss_VAE[i] = validation_loss
+        if mode == 'IWAE':
+            list_of_training_loss_IWAE[i] = training_loss
+            list_of_validation_loss_IWAE[i] = validation_loss
 
-    torch.save(net.state_dict(), '//nn_parameters/'+mode+'_model.pt')
-
-    # plot loss vs num of epoch
-    plt.plot(num_of_epoch, list_of_training_loss, '-r', label='avg train loss')
-    plt.plot(num_of_epoch, list_of_validation_loss, '-b', label='avg valid loss')
-    plt.legend()
-    plt.xlabel('index')
-    plt.ylabel('loss')
-    plt.savefig('//PycharmProjects/autoencoder/images/loss_vs_epoch.png')
-    plt.show()
+    torch.save(net.state_dict(), '/Users/byronsu/PycharmProjects/autoencoder/nn_parameters/'+mode+'_model.pt')
 
 
 # evaluate the performance of VAE on the train dataset after training
-def evaluate(mode='IWAE'):
+def evaluate(mode='VAE'):
+    if mode == 'VAE':
+        net = net_VAE
+    if mode == 'IWAE':
+        net = net_IWAE
+
     net.eval()
+
+    # initialize the list to store original/reconstructed images
+    original_images_list = []
 
     # reconfigure the train loader to save running time
     train_loader = torch.utils.data.DataLoader(
@@ -149,23 +149,50 @@ def evaluate(mode='IWAE'):
 
     # show the original images for training
     grid_generation(img_list=original_images_list,
-                    save_path='//images/original_images_'+mode+'.png')
+                    save_path='/Users/byronsu/PycharmProjects/autoencoder/images/original_images_'+mode+'.png')
 
     # show the reconstructed images through VAE
     grid_generation(img_list=out_list,
-                    save_path='//images/reconstruction_'+mode+'.png')
+                    save_path='/Users/byronsu/PycharmProjects/autoencoder/images/reconstruction_'+mode+'.png')
 
     # show the sampled images
     sampled_images_list = [sample(decoder, parameters_dict['latent_dim_'+mode], 100).cpu().detach()]
     grid_generation(img_list=sampled_images_list,
-                    save_path='//images/sampled_images.png')
+                    save_path='/Users/byronsu/PycharmProjects/autoencoder/images/sampled_images'+mode+'.png')
+
+    image_generation(
+        path1='/Users/byronsu/PycharmProjects/autoencoder/images/original_images_'+mode+'.png',
+        path2='/Users/byronsu/PycharmProjects/autoencoder/images/reconstruction_'+mode+'.png',
+        save_path='/Users/byronsu/PycharmProjects/autoencoder/images/compare_'+mode+'.png'
+    )
 
 
 if __name__ == '__main__':
-    path1 = '//PycharmProjects/autoencoder/images/original_images.png'
-    path2 = '//PycharmProjects/autoencoder/images/reconstruction.png'
-    save_path = '//images/compare.png'
+    # set the neural network and Adam optimizer
+    net_VAE = autoencoder(channel=1,
+                          width=28,
+                          height=28,
+                          hyperparameters=parameters_dict,
+                          mode='VAE').to(device)
+    optimizer_VAE = torch.optim.Adam(net_VAE.parameters(), lr=learning_rate)
+    net_IWAE = autoencoder(channel=1,
+                           width=28,
+                           height=28,
+                           hyperparameters=parameters_dict,
+                           mode='IWAE').to(device)
+    optimizer_IWAE = torch.optim.Adam(net_IWAE.parameters(), lr=learning_rate)
     start_time = time.time()
-    train()
-    evaluate()
-    image_generation(path1=path1, path2=path2, save_path=save_path)
+    train(mode='VAE')
+    evaluate(mode='VAE')
+    train(mode='IWAE')
+    evaluate(mode='IWAE')
+    # plot loss vs num of epoch
+    plt.plot(num_of_epoch, list_of_training_loss_VAE, '-r', label='train loss VAE')
+    plt.plot(num_of_epoch, list_of_validation_loss_VAE, '--r', label='valid loss VAE')
+    plt.plot(num_of_epoch, list_of_training_loss_IWAE, '-b', label='train loss IWAE')
+    plt.plot(num_of_epoch, list_of_validation_loss_IWAE, '--b', label='valid loss IWAE')
+    plt.legend()
+    plt.xlabel('index')
+    plt.ylabel('loss')
+    plt.savefig('/Users/byronsu/PycharmProjects/autoencoder/images/loss_vs_epoch.png')
+    plt.show()

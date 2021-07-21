@@ -17,7 +17,7 @@ def grid_generation(img_list, save_path):
     grid = torchvision.utils.make_grid(output_examples, nrow=10, normalize=True)
     plt.imshow(grid.permute(1, 2, 0))
     plt.axis('off')
-    #plt.savefig(save_path)
+    plt.savefig(save_path)
     plt.show()
 
 

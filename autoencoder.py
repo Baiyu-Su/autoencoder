@@ -24,7 +24,6 @@ class autoencoder(nn.Module):
         try:
             self.k = hyperparameters['k_' + mode]
             self.latent_dim = hyperparameters['latent_dim_' + mode]
-
         except:
             NameError
 
