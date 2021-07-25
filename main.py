@@ -116,7 +116,7 @@ def train(mode):
 
 
 # evaluate the performance of VAE on the train dataset after training
-def evaluate(mode='VAE'):
+def evaluate(mode):
     if mode == 'VAE':
         net = net_VAE
     if mode == 'IWAE':

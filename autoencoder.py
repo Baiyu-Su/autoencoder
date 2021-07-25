@@ -124,7 +124,7 @@ class autoencoder(nn.Module):
         loss = -torch.logsumexp(log_w, dim=1) + np.log(self.k)
 
         # take the mean of loss over every image in the batch
-        loss = torch.sum(loss, dim=0)
+        loss = torch.sum(loss, dim=0)/self.k
 
         return loss
 
