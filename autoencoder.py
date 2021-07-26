@@ -24,8 +24,8 @@ class autoencoder(nn.Module):
         try:
             self.k = hyperparameters['k_' + mode]
             self.latent_dim = hyperparameters['latent_dim_' + mode]
-        except:
-            NameError
+        except NameError:
+            print('wrong mode')
 
         # CNN to encode the images
         self.encConv1 = nn.Conv2d(in_channels=1, out_channels=4, kernel_size=3)
@@ -124,7 +124,7 @@ class autoencoder(nn.Module):
         loss = -torch.logsumexp(log_w, dim=1) + np.log(self.k)
 
         # take the mean of loss over every image in the batch
-        loss = torch.sum(loss, dim=0)/self.k
+        loss = torch.sum(loss, dim=0)
 
         return loss
 
