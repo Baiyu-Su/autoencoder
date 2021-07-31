@@ -78,26 +78,24 @@ class autoencoder(nn.Module):
 
         return h_list, out_list, mean, logVar
 
-    def log_q(self, mean, logVar, h):
-        """
-        log_q stands for logp(h) - logq(h|x)
-        p(h) is a identity multivariate normal distribution,
-        q(h|x) is a multivariate Gaussian with mean vector: mean, and covariance matrix: Var * I
-        """
-        log_q_value = 0.5 * torch.sum((-h.pow(2) + ((h - mean).pow(2) / torch.exp(logVar)) + logVar), dim=1)
-        log_q_value = log_q_value
+    def logp_x_h(self, x, x_hat):
+        # logp_x_h stands for logp(x|h)
+        logp_x_h_value = F.binary_cross_entropy(input=x_hat, target=x, reduction='none')
+        logp_x_h_value = -torch.sum(logp_x_h_value, dim=[2, 3])
 
-        return log_q_value
+        return logp_x_h_value
 
-    def log_p(self, x, x_hat):
-        """
-        log_p stands for logp(x|h)
-        note F.binary_cross_entropy has an in-built negative sign -
-        """
-        log_p_value = F.binary_cross_entropy(input=x_hat, target=x, reduction='none')
-        log_p_value = torch.sum(log_p_value, dim=[2, 3])
+    def logp_h(self, h):
+        # logp_h stands for logp(h)
+        logp_h_value = - 0.5 * torch.sum(h.pow(2) + np.log(2 * np.pi), dim=1)
 
-        return log_p_value
+        return logp_h_value
+
+    def logq_h_x(self, mean, logVar, h):
+        # logq_h_x stands for logq(h|x)
+        logq_h_x_value = - 0.5 * torch.sum(((h - mean).pow(2) / torch.exp(logVar)) + logVar + np.log(2 * np.pi), dim=1)
+
+        return logq_h_x_value
 
     def random_sample(self, mean, logVar):
         # random sampling from multivariate normal distribution
@@ -117,11 +115,14 @@ class autoencoder(nn.Module):
         out_stack = torch.stack(out_list, dim=4)
         h_stack = torch.stack(h_list, dim=2)
 
-        log_q_value = self.log_q(mean=mean_stack, logVar=logVar_stack, h=h_stack)
-        log_p_value = torch.squeeze(self.log_p(x=img_stack, x_hat=out_stack))
-        log_w = log_q_value - log_p_value
+        # retrieve the log probabilities
+        logq_h_x_value = self.logq_h_x(mean=mean_stack, logVar=logVar_stack, h=h_stack)
+        logp_h_value = self.logp_h(h=h_stack)
+        logp_x_h_value = self.logp_x_h(x=img_stack, x_hat=out_stack).view(-1, self.k)
+        log_w = logp_x_h_value + logp_h_value - logq_h_x_value
 
-        loss = -torch.logsumexp(log_w, dim=1) + np.log(self.k)
+        # to produce the loss of the two models
+        loss = - (torch.logsumexp(log_w, dim=1) - np.log(self.k))
 
         # take the mean of loss over every image in the batch
         loss = torch.sum(loss, dim=0)
@@ -129,6 +130,7 @@ class autoencoder(nn.Module):
         return loss
 
     def decoder_model(self):
+        # return the decoder model of this network for sampling
         return self.decoder
 
 

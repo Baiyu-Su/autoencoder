@@ -21,7 +21,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # set hyperparameters
 batch_size = 20
-epoch = 10
+epoch = 20
 learning_rate = 1e-3
 
 parameters_dict = {
@@ -48,6 +48,8 @@ list_of_training_loss_VAE = np.zeros_like(num_of_epoch, dtype='float32')
 list_of_validation_loss_VAE = np.zeros_like(num_of_epoch, dtype='float32')
 list_of_training_loss_IWAE = np.zeros_like(num_of_epoch, dtype='float32')
 list_of_validation_loss_IWAE = np.zeros_like(num_of_epoch, dtype='float32')
+BCE_loss_VAE = np.zeros_like(num_of_epoch, dtype='float32')
+BCE_loss_IWAE = np.zeros_like(num_of_epoch, dtype='float32')
 
 
 def train(mode):
@@ -73,6 +75,7 @@ def train(mode):
     for i in range(epoch):
         training_loss = 0.0
         validation_loss = 0.0
+        BCE_loss = 0.0
 
         for data in train_loader:
             img, _ = data
@@ -108,9 +111,11 @@ def train(mode):
         if mode == 'VAE':
             list_of_training_loss_VAE[i] = training_loss
             list_of_validation_loss_VAE[i] = validation_loss
+            BCE_loss_VAE[i] = BCE_loss
         if mode == 'IWAE':
             list_of_training_loss_IWAE[i] = training_loss
             list_of_validation_loss_IWAE[i] = validation_loss
+            BCE_loss_IWAE[i] = BCE_loss
 
     torch.save(net.state_dict(), '~/PycharmProjects/autoencoder/nn_parameters/'+mode+'_model.pt')
 
@@ -186,7 +191,7 @@ if __name__ == '__main__':
     evaluate(mode='VAE')
     train(mode='IWAE')
     evaluate(mode='IWAE')
-    # plot loss vs num of epoch
+    # plot loss vs num of epoch of the two models
     plt.plot(num_of_epoch, list_of_training_loss_VAE, '-r', label='train loss VAE')
     plt.plot(num_of_epoch, list_of_validation_loss_VAE, '--r', label='valid loss VAE')
     plt.plot(num_of_epoch, list_of_training_loss_IWAE, '-b', label='train loss IWAE')
@@ -196,3 +201,4 @@ if __name__ == '__main__':
     plt.ylabel('loss')
     plt.savefig('~/PycharmProjects/autoencoder/images/loss_vs_epoch.png')
     plt.show()
+
