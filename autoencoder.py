@@ -22,7 +22,7 @@ class autoencoder(nn.Module):
         k is the num of sampling per image'''
         self.reduced_dim = 8 * (width - 4) * (height - 4)
         try:
-            self.k = hyperparameters['k_' + mode]
+            self.k = hyperparameters['sampleTimes_' + mode]
             self.latent_dim = hyperparameters['latent_dim_' + mode]
         except NameError:
             print('wrong mode')
@@ -71,38 +71,18 @@ class autoencoder(nn.Module):
 
         # for each image in the batch, sampling from a same distribution k times
         for i in range(self.k):
-            h = self.random_sample(mean, logVar)
+            h = random_sample(mean, logVar)
             h_list.append(h)
             out = self.decoder(h)
             out_list.append(out)
 
         return h_list, out_list, mean, logVar
 
-    def logp_x_h(self, x, x_hat):
-        # logp_x_h stands for logp(x|h)
-        logp_x_h_value = F.binary_cross_entropy(input=x_hat, target=x, reduction='none')
-        logp_x_h_value = -torch.sum(logp_x_h_value, dim=[2, 3])
-
-        return logp_x_h_value
-
-    def logp_h(self, h):
-        # logp_h stands for logp(h)
-        logp_h_value = - 0.5 * torch.sum(h.pow(2) + np.log(2 * np.pi), dim=1)
-
-        return logp_h_value
-
     def logq_h_x(self, mean, logVar, h):
         # logq_h_x stands for logq(h|x)
         logq_h_x_value = - 0.5 * torch.sum(((h - mean).pow(2) / torch.exp(logVar)) + logVar + np.log(2 * np.pi), dim=1)
 
         return logq_h_x_value
-
-    def random_sample(self, mean, logVar):
-        # random sampling from multivariate normal distribution
-        std = torch.exp_(0.5 * logVar)
-        epsilon = torch.randn_like(std)
-
-        return mean + std * epsilon
 
     def loss_function(self, mean, logVar, img, out_list, h_list):
         # stack img, mean and logVar together in a new dimension to produce a tensor, same in each layer
@@ -117,14 +97,14 @@ class autoencoder(nn.Module):
 
         # retrieve the log probabilities
         logq_h_x_value = self.logq_h_x(mean=mean_stack, logVar=logVar_stack, h=h_stack)
-        logp_h_value = self.logp_h(h=h_stack)
-        logp_x_h_value = self.logp_x_h(x=img_stack, x_hat=out_stack).view(-1, self.k)
+        logp_h_value = logp_h(h=h_stack)
+        logp_x_h_value = logp_x_h(x=img_stack, x_hat=out_stack).view(-1, self.k)
         log_w = logp_x_h_value + logp_h_value - logq_h_x_value
 
         # to produce the loss of the two models
         loss = - (torch.logsumexp(log_w, dim=1) - np.log(self.k))
 
-        # take the mean of loss over every image in the batch
+        # take the sum of loss over every image in the batch
         loss = torch.sum(loss, dim=0)
 
         return loss
@@ -143,3 +123,26 @@ class Reshape(nn.Module):
 
     def forward(self, tensor):
         return tensor.view(-1, self.channel, self.width - 4, self.height - 4)
+
+
+def logp_x_h(x, x_hat):
+    # logp_x_h stands for logp(x|h)
+    logp_x_h_value = F.binary_cross_entropy(input=x_hat, target=x, reduction='none')
+    logp_x_h_value = -torch.sum(logp_x_h_value, dim=[2, 3])
+
+    return logp_x_h_value
+
+
+def logp_h(h):
+    # logp_h stands for logp(h)
+    logp_h_value = - 0.5 * torch.sum(h.pow(2) + np.log(2 * np.pi), dim=1)
+
+    return logp_h_value
+
+
+def random_sample(mean, logVar):
+    # random sampling from multivariate normal distribution
+    std = torch.exp_(0.5 * logVar)
+    epsilon = torch.randn_like(std)
+
+    return mean + std * epsilon
