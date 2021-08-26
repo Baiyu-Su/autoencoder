@@ -83,7 +83,7 @@ def train(mode):
         validation_loss = 0.0
         BCE_loss = 0.0
         marginal_likelihood = 0.0
-        sampled_items = random.sample(range(len(test_loader)), 10)
+        sampled_items = random.sample(range(len(test_loader)), 5)
 
         for data in train_loader:
             img, _ = data
@@ -116,7 +116,7 @@ def train(mode):
 
             if j in sampled_items:
                 marginal_likelihood += ais(decoder=decoder,
-                                     img=img, K=5, T=500, batch=batch_size, sampleTimes=sampleTimes)/10
+                                     img=img, K=3, T=400, batch=batch_size, sampleTimes=sampleTimes)/5
 
         # note the performance of each epoch
         end_time = time.time()
@@ -134,7 +134,7 @@ def train(mode):
             BCE_loss_IWAE[i] = BCE_loss
             list_of_marginal_likelihood_IWAE[i] = marginal_likelihood
 
-    torch.save(net.state_dict(), '/Users/byronsu/PycharmProjects/autoencoder/nn_parameters/'+mode+'_model.pt')
+    torch.save(net.state_dict(), '~/PycharmProjects/autoencoder/nn_parameters/'+mode+'_model.pt')
 
 
 # evaluate the performance of VAE on the train dataset after training
@@ -171,21 +171,21 @@ def evaluate(mode):
 
     # show the original images for training
     grid_generation(img_list=original_images_list,
-                    save_path='/Users/byronsu/PycharmProjects/autoencoder/images/original_images_'+mode+'.png')
+                    save_path='~/PycharmProjects/autoencoder/images/original_images_'+mode+'.png')
 
     # show the reconstructed images through VAE
     grid_generation(img_list=out_list,
-                    save_path='/Users/byronsu/PycharmProjects/autoencoder/images/reconstruction_'+mode+'.png')
+                    save_path='~/PycharmProjects/autoencoder/images/reconstruction_'+mode+'.png')
 
     # show the sampled images
     sampled_images_list = [sample(decoder, parameters_dict['latent_dim_'+mode], 100).cpu().detach()]
     grid_generation(img_list=sampled_images_list,
-                    save_path='/Users/byronsu/PycharmProjects/autoencoder/images/sampled_images'+mode+'.png')
+                    save_path='~/PycharmProjects/autoencoder/images/sampled_images'+mode+'.png')
 
     image_generation(
-        path1='/Users/byronsu/PycharmProjects/autoencoder/images/original_images_'+mode+'.png',
-        path2='/Users/byronsu/PycharmProjects/autoencoder/images/reconstruction_'+mode+'.png',
-        save_path='/Users/byronsu/PycharmProjects/autoencoder/images/compare_'+mode+'.png'
+        path1='~/PycharmProjects/autoencoder/images/original_images_'+mode+'.png',
+        path2='~/PycharmProjects/autoencoder/images/reconstruction_'+mode+'.png',
+        save_path='~/PycharmProjects/autoencoder/images/compare_'+mode+'.png'
     )
 
 
@@ -208,8 +208,8 @@ if __name__ == '__main__':
     start_time = time.time()
     train(mode='VAE')
     evaluate(mode='VAE')
-    #train(mode='IWAE')
-    #evaluate(mode='IWAE')
+    train(mode='IWAE')
+    evaluate(mode='IWAE')
     # plot loss vs num of epoch of the two models
     plt.plot(num_of_epoch, list_of_training_loss_VAE, '-r', label='train loss VAE')
     plt.plot(num_of_epoch, list_of_validation_loss_VAE, '--r', label='valid loss VAE')
@@ -220,6 +220,6 @@ if __name__ == '__main__':
     plt.legend()
     plt.xlabel('index')
     plt.ylabel('loss')
-    plt.savefig('/Users/byronsu/PycharmProjects/autoencoder/images/loss_vs_epoch.png')
+    plt.savefig('~/PycharmProjects/autoencoder/images/loss_vs_epoch.png')
     plt.show()
 
