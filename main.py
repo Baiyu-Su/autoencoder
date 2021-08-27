@@ -25,6 +25,9 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 batch_size = 20
 epoch = 10
 learning_rate = 1e-3
+ais_sampleTimes = 3
+ais_sampleSteps = 400
+num_selected_items = 10
 
 parameters_dict = {
     'latent_dim_VAE': 8,
@@ -83,7 +86,7 @@ def train(mode):
         validation_loss = 0.0
         BCE_loss = 0.0
         marginal_likelihood = 0.0
-        sampled_items = random.sample(range(len(test_loader)), 5)
+        sampled_items = random.sample(range(len(test_loader)), num_selected_items)
 
         for data in train_loader:
             img, _ = data
@@ -115,8 +118,8 @@ def train(mode):
             validation_loss += loss.item()/len(test_loader.sampler)
 
             if j in sampled_items:
-                marginal_likelihood += ais(decoder=decoder,
-                                     img=img, K=3, T=400, batch=batch_size, sampleTimes=sampleTimes)/5
+                marginal_likelihood += ais(decoder=decoder, img=img, K=ais_sampleTimes, T=ais_sampleSteps,
+                                           batch=batch_size, sampleTimes=sampleTimes)/num_selected_items
 
         # note the performance of each epoch
         end_time = time.time()
